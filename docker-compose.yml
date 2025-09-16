@@ -1,3 +1,5 @@
+version: "3.8"
+
 services:
     traefik:
         image: "traefik"
@@ -21,20 +23,24 @@ services:
     n8n:
         image: docker.n8n.io/n8nio/n8n
         restart: always
-        ports:
-            - "5678:5678"
         environment:
-            - N8N_HOST=0.0.0.0
+            - N8N_HOST=n8n.jdevelopmen.xyz # 🔹 debe ser tu dominio
             - N8N_PORT=5678
-            - N8N_PROTOCOL=http
+            - N8N_PROTOCOL=https
             - NODE_ENV=production
             - WEBHOOK_URL=https://n8n.jdevelopmen.xyz/
-            - GENERIC_TIMEZONE=America/Bogota # o el valor que uses
+            - GENERIC_TIMEZONE=America/Bogota
         volumes:
             - n8n_data:/home/node/.n8n
             - ./local-files:/files
         networks:
             - shared-net
+        labels:
+            - "traefik.enable=true"
+            - "traefik.http.routers.n8n.rule=Host(`n8n.jdevelopmen.xyz`)"
+            - "traefik.http.routers.n8n.entrypoints=websecure"
+            - "traefik.http.routers.n8n.tls.certresolver=mytlschallenge"
+            - "traefik.http.services.n8n.loadbalancer.server.port=5678"
 
 volumes:
     n8n_data:
