@@ -1,32 +1,25 @@
 version: "3.8"
 
 services:
+    # Servicio traefik requerido por Dokploy, pero NO expone puertos
     traefik:
-        image: "traefik"
+        image: traefik
         restart: always
         command:
-            - "--api=true"
-            - "--api.insecure=true"
             - "--providers.docker=true"
             - "--providers.docker.exposedbydefault=false"
-            - "--entrypoints.web.address=:80"
-            - "--entrypoints.web.http.redirections.entryPoint.to=websecure"
-            - "--entrypoints.web.http.redirections.entrypoint.scheme=https"
-            - "--entrypoints.websecure.address=:443"
-            - "--certificatesresolvers.mytlschallenge.acme.tlschallenge=true"
-            - "--certificatesresolvers.mytlschallenge.acme.email=${SSL_EMAIL}"
-            - "--certificatesresolvers.mytlschallenge.acme.storage=/letsencrypt/acme.json"
         volumes:
-            - traefik_data:/letsencrypt
             - /var/run/docker.sock:/var/run/docker.sock:ro
+        # 🔹 Sin ports aquí, Dokploy ya tiene un Traefik global en 80/443
 
+    # Servicio N8N
     n8n:
         image: docker.n8n.io/n8nio/n8n
         restart: always
         environment:
-            - N8N_HOST=n8n.jdevelopmen.xyz # 👉 usa tu dominio real
+            - N8N_HOST=n8n.jdevelopmen.xyz # Tu dominio real
             - N8N_PORT=5678
-            - N8N_PROTOCOL=https # 👉 clave para HTTPS
+            - N8N_PROTOCOL=https
             - NODE_ENV=production
             - WEBHOOK_URL=https://n8n.jdevelopmen.xyz/
             - GENERIC_TIMEZONE=America/Bogota
@@ -42,4 +35,3 @@ services:
 
 volumes:
     n8n_data:
-    traefik_data:
