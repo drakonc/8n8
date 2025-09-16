@@ -1,6 +1,19 @@
 version: "3.8"
 
 services:
+    # Servicio traefik requerido solo para que Dokploy no se queje.
+    traefik:
+        image: traefik
+        restart: always
+        command:
+            - "--providers.docker=true"
+            - "--providers.docker.exposedbydefault=false"
+        volumes:
+            - /var/run/docker.sock:/var/run/docker.sock:ro
+        networks:
+            - dokploy-network # 👈 debe existir esta red en tu server (propia de Dokploy)
+        # 🔹 SIN ports (no se expone en 80/443)
+
     n8n:
         image: docker.n8n.io/n8nio/n8n
         restart: always
@@ -15,7 +28,7 @@ services:
             - n8n_data:/home/node/.n8n
             - ./local-files:/files
         networks:
-            - dokploy-network # 👈 conecta al traefik global de Dokploy (importante)
+            - dokploy-network # 👈 misma red que el traefik dummy
         labels:
             - "traefik.enable=true"
             - "traefik.http.routers.n8n.rule=Host(`n8n.jdevelopmen.xyz`)"
@@ -28,4 +41,4 @@ volumes:
 
 networks:
     dokploy-network:
-        external: true # 👈 usar la red interna de Dokploy/Traefik
+        external: true # 👈 esta red la crea Dokploy automáticamente
