@@ -1,22 +1,6 @@
 version: "3.8"
 
 services:
-    traefik:
-        image: "traefik"
-        restart: always
-        command:
-            - "--providers.docker=true"
-            - "--providers.docker.exposedbydefault=false"
-            - "--entrypoints.web.address=:80"
-            - "--entrypoints.websecure.address=:443"
-            - "--certificatesresolvers.mytlschallenge.acme.tlschallenge=true"
-            - "--certificatesresolvers.mytlschallenge.acme.email=${SSL_EMAIL}"
-            - "--certificatesresolvers.mytlschallenge.acme.storage=/letsencrypt/acme.json"
-        volumes:
-            - /var/run/docker.sock:/var/run/docker.sock:ro
-        networks:
-            - proxy-net # 👈 red compartida
-
     n8n:
         image: docker.n8n.io/n8nio/n8n
         restart: always
@@ -31,7 +15,7 @@ services:
             - n8n_data:/home/node/.n8n
             - ./local-files:/files
         networks:
-            - proxy-net # 👈 red compartida
+            - dokploy-network # 👈 conecta al traefik global de Dokploy (importante)
         labels:
             - "traefik.enable=true"
             - "traefik.http.routers.n8n.rule=Host(`n8n.jdevelopmen.xyz`)"
@@ -43,4 +27,5 @@ volumes:
     n8n_data:
 
 networks:
-    proxy-net: # 👈 red declarada
+    dokploy-network:
+        external: true # 👈 usar la red interna de Dokploy/Traefik
