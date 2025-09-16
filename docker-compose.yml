@@ -1,23 +1,27 @@
 version: "3.8"
 
 services:
-    # Servicio traefik requerido por Dokploy, pero NO expone puertos
     traefik:
-        image: traefik
+        image: "traefik"
         restart: always
         command:
             - "--providers.docker=true"
             - "--providers.docker.exposedbydefault=false"
+            - "--entrypoints.web.address=:80"
+            - "--entrypoints.websecure.address=:443"
+            - "--certificatesresolvers.mytlschallenge.acme.tlschallenge=true"
+            - "--certificatesresolvers.mytlschallenge.acme.email=${SSL_EMAIL}"
+            - "--certificatesresolvers.mytlschallenge.acme.storage=/letsencrypt/acme.json"
         volumes:
             - /var/run/docker.sock:/var/run/docker.sock:ro
-        # 🔹 Sin ports aquí, Dokploy ya tiene un Traefik global en 80/443
+        networks:
+            - proxy-net # 👈 red compartida
 
-    # Servicio N8N
     n8n:
         image: docker.n8n.io/n8nio/n8n
         restart: always
         environment:
-            - N8N_HOST=n8n.jdevelopmen.xyz # Tu dominio real
+            - N8N_HOST=n8n.jdevelopmen.xyz
             - N8N_PORT=5678
             - N8N_PROTOCOL=https
             - NODE_ENV=production
@@ -26,6 +30,8 @@ services:
         volumes:
             - n8n_data:/home/node/.n8n
             - ./local-files:/files
+        networks:
+            - proxy-net # 👈 red compartida
         labels:
             - "traefik.enable=true"
             - "traefik.http.routers.n8n.rule=Host(`n8n.jdevelopmen.xyz`)"
@@ -35,3 +41,6 @@ services:
 
 volumes:
     n8n_data:
+
+networks:
+    proxy-net: # 👈 red declarada
