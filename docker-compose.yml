@@ -14,8 +14,6 @@ services:
             - "--certificatesresolvers.mytlschallenge.acme.tlschallenge=true"
             - "--certificatesresolvers.mytlschallenge.acme.email=${SSL_EMAIL}"
             - "--certificatesresolvers.mytlschallenge.acme.storage=/letsencrypt/acme.json"
-        ports:
-            - "888:80"
         volumes:
             - traefik_data:/letsencrypt
             - /var/run/docker.sock:/var/run/docker.sock:ro
