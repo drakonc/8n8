@@ -1,25 +1,46 @@
-version: "3.8"
-
 services:
+    traefik:
+        image: "traefik"
+        restart: always
+        command:
+            - "--api=true"
+            - "--api.insecure=true"
+            - "--providers.docker=true"
+            - "--providers.docker.exposedbydefault=false"
+            - "--entrypoints.web.address=:80"
+            - "--entrypoints.web.http.redirections.entryPoint.to=websecure"
+            - "--entrypoints.web.http.redirections.entrypoint.scheme=https"
+            - "--entrypoints.websecure.address=:443"
+            - "--certificatesresolvers.mytlschallenge.acme.tlschallenge=true"
+            - "--certificatesresolvers.mytlschallenge.acme.email=${SSL_EMAIL}"
+            - "--certificatesresolvers.mytlschallenge.acme.storage=/letsencrypt/acme.json"
+        ports:
+            - "888:80"
+        volumes:
+            - traefik_data:/letsencrypt
+            - /var/run/docker.sock:/var/run/docker.sock:ro
+
     n8n:
         image: docker.n8n.io/n8nio/n8n
         restart: always
+        ports:
+            - "5678:5678"
         environment:
-            - N8N_HOST=n8n.jdevelopmen.xyz # 🔹 tu dominio donde accederás
+            - N8N_HOST=0.0.0.0
             - N8N_PORT=5678
-            - N8N_PROTOCOL=https # usando Traefik global con SSL
+            - N8N_PROTOCOL=http
             - NODE_ENV=production
-            - WEBHOOK_URL=https://n8n.jdevelopmen.xyz/ # URL externa completa
-            - GENERIC_TIMEZONE=America/Bogota
+            - WEBHOOK_URL=https://n8n.jdevelopmen.xyz/
+            - GENERIC_TIMEZONE=America/Bogota # o el valor que uses
         volumes:
-            - n8n_data:/home/node/.n8n # datos persistentes
-            - ./local-files:/files # tus archivos locales
-        labels:
-            - "traefik.enable=true"
-            - "traefik.http.routers.n8n.rule=Host(`n8n.jdevelopmen.xyz`)"
-            - "traefik.http.routers.n8n.entrypoints=websecure"
-            - "traefik.http.routers.n8n.tls.certresolver=mytlschallenge"
-            - "traefik.http.services.n8n.loadbalancer.server.port=5678"
+            - n8n_data:/home/node/.n8n
+            - ./local-files:/files
+        networks:
+            - shared-net
 
 volumes:
     n8n_data:
+    traefik_data:
+
+networks:
+    shared-net:
